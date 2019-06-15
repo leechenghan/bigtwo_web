@@ -9,7 +9,6 @@ window.addEventListener("load", function(){
   var ctx = canvas.getContext("2d");
   var sprites = [];
   var validSubmission = [];
-  var submitted = [];
   var cards = [];
   var oppCards = [];
   var deck = [];
@@ -66,58 +65,49 @@ window.addEventListener("load", function(){
           x: 0,
           y: 0
         });
-        oppCards.push({
-          val: drawCard(),
-        });
+        oppCards.push(drawCard());
   }
+
   updateCardsCoords(cards, 0.85);
 
+  // Logic after a card is submitted. Checks if move is valid and handles
   var submitCardsAndUpdate = function(){
-    cards.forEach(function(e, i){
-      if (e.selected)
-        submitted.push(e.val);
-    });
-
-    if (submitted.length == 0)
-      pass();
-    //(Checker.checkValidity(validSubmission, submitted))
-    else if (1){
+    //TODO: (Checker.checkValidity(validSubmission, submitted) && myTurn)
+    if (1){
       for (i = cards.length-1; i >= 0; i--){
-        if (cards[i].selected){
+        if (cards[i].selected)
           validSubmission.push({
             val: cards.splice(i, 1)[0].val,
             x: 0,
             y: 0
           });
-        }
       }
-      submitted.length = 0;
       updateCardsCoords(cards, 0.85);
       updateCardsCoords(validSubmission, 0.5)
+      //change turns
     }
-    else{
-      //Unselect cards
-      cards.forEach(function(e, i){
+    cards.forEach(function(e, i){
           e.selected = false;
-      });
-    }
-
+    });
   };
 
   var pass = function(){
-    //draw a card
-    if (deck.length != 0){
+    // Draw a card
+    // TODO: && myTurn
+    if (deck.length != 0)
       cards.push({
         val: drawCard(),
-        selected: false
+        selected: false,
+        x: 0,
+        y: 0
       });
-    }
     validSubmission.length = 0;
     updateCardsCoords(cards, 0.85);
     updateCardsCoords(validSubmission, 0.5);
-    //change turns
+    //TODO: change turns
   };
 
+  // Checks if game is over
   var update = function(){
     if (cards.length == 0 || oppCards.length == 0){
         gameEnds = true;
@@ -126,7 +116,8 @@ window.addEventListener("load", function(){
     }
   };
 
-  function getMousePos(canvas, evt) {
+  // Gets position of mouse relative to canvas
+  var getMousePos = function(canvas, evt) {
       var rect = canvas.getBoundingClientRect();
       return {
         x: evt.clientX - rect.left,
@@ -134,31 +125,39 @@ window.addEventListener("load", function(){
       };
   }
 
+  // Checks if middle val is between left and left + diff
+  var isBetween = function(left, middle, diff){
+    if (middle >= left && left+diff >= middle)
+      return true;
+    return false;
+  }
+
+
+  // Executes events on click - sorting, submitting, passing or selecting card
   canvas.addEventListener("click", function(evt){
-    //find x y coords of mouse
+
     var pos = getMousePos(canvas, evt);
 
-    if (pos.y >= 405 && pos.y <= 475){
-      //select cards by x coord
+    if (isBetween(405, pos.y, 70)){
       for (i = 0; i < cards.length; i++){
-        if (pos.x >= cards[i].x && pos.x <= cards[i].x + 32){
+        if (isBetween(cards[i].x, pos.x, 32))
           cards[i].selected = !cards[i].selected;
-        }
       }
     }
-    else if (pos.x >= BUTTON_X_POSITION && pos.x <= BUTTON_X_POSITION + BUTTON_WIDTH){
-      if (pos.y >= BUTTON_Y_POSITION[0] && pos.y <= BUTTON_Y_POSITION[0] + BUTTON_HEIGHT)
+
+    else if (isBetween(BUTTON_X_POSITION, pos.x, BUTTON_WIDTH)){
+      if (isBetween(BUTTON_Y_POSITION[0], pos.y, BUTTON_HEIGHT))
         sortCardsByRank(cards);
-      else if (pos.y >= BUTTON_Y_POSITION[1] && pos.y <= BUTTON_Y_POSITION[1] + BUTTON_HEIGHT)
+      else if (isBetween(BUTTON_Y_POSITION[1], pos.y, BUTTON_HEIGHT))
         sortCardsBySuit(cards);
-      else if (pos.y >= BUTTON_Y_POSITION[2] && pos.y <= BUTTON_Y_POSITION[2] + BUTTON_HEIGHT)
+      else if (isBetween(BUTTON_Y_POSITION[2], pos.y, BUTTON_HEIGHT))
         submitCardsAndUpdate();
-      else if (pos.y >= BUTTON_Y_POSITION[3] && pos.y <= BUTTON_Y_POSITION[3] + BUTTON_HEIGHT)
+      else if (isBetween(BUTTON_Y_POSITION[3], pos.y, BUTTON_HEIGHT))
         pass();
     }
   });
 
-  // Draw cards
+  // Drawing all objects on canvas
   var draw = function(){
     ctx.clearRect(0,0,GAME_WIDTH,GAME_HEIGHT);
 
@@ -173,7 +172,8 @@ window.addEventListener("load", function(){
     // Drawing buttons
     ctx.fillStyle = "#000000";
     for (i = 0; i < BUTTON_Y_POSITION.length; i++){
-      ctx.fillRect(BUTTON_X_POSITION,BUTTON_Y_POSITION[i],BUTTON_WIDTH,BUTTON_HEIGHT);
+      ctx.fillRect(BUTTON_X_POSITION,BUTTON_Y_POSITION[i],
+                   BUTTON_WIDTH,BUTTON_HEIGHT);
     }
     ctx.fillStyle = "#FFFFFF";
     ctx.font = "20px Arial";
@@ -183,6 +183,7 @@ window.addEventListener("load", function(){
     ctx.fillText("Pass", 818, 378);
   };
 
+  // Loading pictures into sprites
   var load = function (){
     for (i = 1; i < 53; i++){
       sprites.push(new Image());
