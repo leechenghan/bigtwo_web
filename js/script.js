@@ -27,6 +27,7 @@ window.addEventListener("load", function(){
   var BUTTON_HEIGHT = 45;
   var BUTTON_WIDTH = 160;
 
+  // Sorts player cards by rank
   var sortCardsByRank = function(arr){
     arr.sort(function(a, b){
       return a.val - b.val;
@@ -34,8 +35,9 @@ window.addEventListener("load", function(){
     updateCardsCoords(arr, 0.85);
   };
 
+  // Sorts player cards by suit
   var sortCardsBySuit = function(arr){
-    sortCardsByRank(cards);
+    sortCardsByRank(arr);
     arr.sort(function(a,b){
       return a.val % 4 - b.val % 4;
     });
@@ -43,20 +45,21 @@ window.addEventListener("load", function(){
   };
 
   // Updates coordinates for cards based on number of cards left
-  var updateCardsCoords = function(arr, fraction){
+  var updateCardsCoords = function(arr, frac){
       arr.forEach(function(e, i){
         e.x = GAME_WIDTH/2 + (i - arr.length/2) * 40;
-        e.y = fraction * GAME_HEIGHT;
+        e.y = frac * GAME_HEIGHT;
       });
   };
 
+  // Selects a card from the deck at random, removes and returns it
   var drawCard = function(){
     var random = Math.floor(Math.random() * deck.length);
     return deck.splice(random, 1);
   };
 
-  if (cards.length == 0 && oppCards == 0){
-      for (i = 0; i < 17; i++){
+  // Initial set up - draws 17 cards for player and opponent
+  for (i = 0; i < 17; i++){
         cards.push({
           val: drawCard(),
           selected: false,
@@ -66,12 +69,10 @@ window.addEventListener("load", function(){
         oppCards.push({
           val: drawCard(),
         });
-      }
-      updateCardsCoords(cards, 0.85);
   }
+  updateCardsCoords(cards, 0.85);
 
   var submitCardsAndUpdate = function(){
-    submitted.length = 0;
     cards.forEach(function(e, i){
       if (e.selected)
         submitted.push(e.val);
@@ -81,27 +82,21 @@ window.addEventListener("load", function(){
       pass();
     //(Checker.checkValidity(validSubmission, submitted))
     else if (1){
-      for (i = cards.length - 1; i >= 0; i--){
-        if (cards[i].selected)
-          cards.splice(i, 1);
+      for (i = cards.length-1; i >= 0; i--){
+        if (cards[i].selected){
+          validSubmission.push({
+            val: cards.splice(i, 1)[0].val,
+            x: 0,
+            y: 0
+          });
+        }
       }
-      validSubmission.length = 0;
-      submitted.forEach(function(e,i){
-        validSubmission.push({
-          val: submitted[i],
-          x: 0,
-          y: 0
-        })
-      })
+      submitted.length = 0;
       updateCardsCoords(cards, 0.85);
       updateCardsCoords(validSubmission, 0.5)
     }
     else{
       //Unselect cards
-      for (i = 0; i < cards.length; i++){
-        if (cards[i].selected)
-          cards[i].selected = !cards[i].selected;
-      }
       cards.forEach(function(e, i){
           e.selected = false;
       });
@@ -169,12 +164,10 @@ window.addEventListener("load", function(){
 
     // Printing cards on screen
     cards.forEach(function(e, i){
-      ctx.drawImage(sprites[e.val], cards[i].x,
-                    cards[i].y - e.selected*20);
+      ctx.drawImage(sprites[e.val], e.x, e.y - e.selected*20);
     });
     validSubmission.forEach(function(e, i){
-      ctx.drawImage(sprites[e.val], validSubmission[i].x,
-                    validSubmission[i].y);
+      ctx.drawImage(sprites[e.val], e.x, e.y);
     });
 
     // Drawing buttons
