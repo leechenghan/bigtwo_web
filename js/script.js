@@ -1,10 +1,24 @@
-// 1. add sorting for cards
-// 2. timeout for submitting cards?
-// 3. add turns?
-// 4. implement game logic - how?
+// 1. timeout for submitting cards?
+// 2. add turns?
+// 3. implement game logic - how?
 
 window.addEventListener("load", function(){
 
+  var gameEnds = false;
+  var canvas = document.getElementById("mycanvas");
+  var ctx = canvas.getContext("2d");
+  var sprites = [];
+  var validSubmission = [];
+  var submitted = [];
+  var cards = [];
+  var oppCards = [];
+  var deck = [];
+  for (i = 1; i < 52; i++){
+    deck.push(i);
+  }
+
+  var GAME_WIDTH = canvas.width;
+  var GAME_HEIGHT = canvas.height;
   var BUTTON_X_POSITION = 760;
   var BUTTON_Y_POSITION = [];
   for (i = 0; i < 4; i++){
@@ -13,69 +27,27 @@ window.addEventListener("load", function(){
   var BUTTON_HEIGHT = 45;
   var BUTTON_WIDTH = 160;
 
-  var gameEnds = false;
-  var canvas = document.getElementById("mycanvas");
-  var ctx = canvas.getContext("2d");
-  var sprites = [];
-  var removed;
-  var mouseXCoords;
-  var mouseYCoords;
-  var validSubmission = [];
-  var submitted = [];
-  var cardsCoords = [];
-  var middleCardsCoords = [];
-  var cards = [];
-  var oppCards = [];
-  var deck = [];
-  for (i = 1; i < 52; i++){
-    deck.push(i);
-  }
-
-  // TODO: can i get these constants from document.canvas?
-  var GAME_WIDTH = 1000;
-  var GAME_HEIGHT = 500;
-
-  // TODO: optimize logic
-  // Card number 8 or 2 spades (arr idx 7) is biggest and
-  // card number 9 or 3 diamonds (arr idx 8) is smallest
-  var sortCardsByRank = function(){
-    cards.sort(function(a, b){
-      var a, b;
-      if (a.val <= 7)
-          a = a.val + 52;
-      else
-          a = a.val;
-      if (b.val <= 7)
-        b = b.val + 52;
-      else
-        b = b.val;
-      return a - b;
+  var sortCardsByRank = function(arr){
+    arr.sort(function(a, b){
+      return a.val - b.val;
     });
+    updateCardsCoords(arr, 0.85);
   };
 
-  var sortCardsBySuit = function(){
-    sortCardsByRank();
-    cards.sort(function(a,b){
+  var sortCardsBySuit = function(arr){
+    sortCardsByRank(cards);
+    arr.sort(function(a,b){
       return a.val % 4 - b.val % 4;
     });
+    updateCardsCoords(arr, 0.85);
   };
 
   // Updates coordinates for cards based on number of cards left
-  var updateCardsCoords = function(){
-      cardsCoords.length = 0;
-      for (i = 0; i < cards.length; i++){
-        cardsCoords.push({
-          x: GAME_WIDTH/2 + (i - cards.length/2) * 40,
-          y: 0.85 * GAME_HEIGHT
-        });
-      }
-      middleCardsCoords.length = 0;
-      for (i = 0; i < validSubmission.length; i++){
-        middleCardsCoords.push({
-          x: GAME_WIDTH/2 + (i - validSubmission.length/2) * 40,
-          y: 0.5 * GAME_HEIGHT
-        });
-      }
+  var updateCardsCoords = function(arr, fraction){
+      arr.forEach(function(e, i){
+        e.x = GAME_WIDTH/2 + (i - arr.length/2) * 40;
+        e.y = fraction * GAME_HEIGHT;
+      });
   };
 
   var drawCard = function(){
@@ -87,34 +59,54 @@ window.addEventListener("load", function(){
       for (i = 0; i < 17; i++){
         cards.push({
           val: drawCard(),
-          selected: false
+          selected: false,
+          x: 0,
+          y: 0
         });
         oppCards.push({
           val: drawCard(),
-          selected: false
         });
       }
-      updateCardsCoords();
+      updateCardsCoords(cards, 0.85);
   }
 
   var submitCardsAndUpdate = function(){
-    //check submit logic
     submitted.length = 0;
-    for (i = 0; i < cards.length; i++){
-      if (cards[i].selected)
-        submitted.push(cards[i].val);
-    }
+    cards.forEach(function(e, i){
+      if (e.selected)
+        submitted.push(e.val);
+    });
+
     if (submitted.length == 0)
       pass();
-    //if its a valid submission
+    //(Checker.checkValidity(validSubmission, submitted))
     else if (1){
       for (i = cards.length - 1; i >= 0; i--){
         if (cards[i].selected)
           cards.splice(i, 1);
       }
-      validSubmission = submitted;
+      validSubmission.length = 0;
+      submitted.forEach(function(e,i){
+        validSubmission.push({
+          val: submitted[i],
+          x: 0,
+          y: 0
+        })
+      })
+      updateCardsCoords(cards, 0.85);
+      updateCardsCoords(validSubmission, 0.5)
     }
-    updateCardsCoords();
+    else{
+      //Unselect cards
+      for (i = 0; i < cards.length; i++){
+        if (cards[i].selected)
+          cards[i].selected = !cards[i].selected;
+      }
+      cards.forEach(function(e, i){
+          e.selected = false;
+      });
+    }
+
   };
 
   var pass = function(){
@@ -126,22 +118,18 @@ window.addEventListener("load", function(){
       });
     }
     validSubmission.length = 0;
-    updateCardsCoords();
+    updateCardsCoords(cards, 0.85);
+    updateCardsCoords(validSubmission, 0.5);
     //change turns
   };
 
   var update = function(){
-    //move cards
+    if (cards.length == 0 || oppCards.length == 0){
+        gameEnds = true;
+        alert('Game Over');
+        window.location = "";
+    }
   };
-
-  if (cards.length == 0 || oppCards.length == 0){
-      gameEnds = true;
-  }
-
-  if (gameEnds){
-      alert('Game Over');
-      window.location = "";
-  }
 
   function getMousePos(canvas, evt) {
       var rect = canvas.getBoundingClientRect();
@@ -158,16 +146,16 @@ window.addEventListener("load", function(){
     if (pos.y >= 405 && pos.y <= 475){
       //select cards by x coord
       for (i = 0; i < cards.length; i++){
-        if (pos.x >= cardsCoords[i].x && pos.x <= cardsCoords[i].x + 32){
+        if (pos.x >= cards[i].x && pos.x <= cards[i].x + 32){
           cards[i].selected = !cards[i].selected;
         }
       }
     }
     else if (pos.x >= BUTTON_X_POSITION && pos.x <= BUTTON_X_POSITION + BUTTON_WIDTH){
       if (pos.y >= BUTTON_Y_POSITION[0] && pos.y <= BUTTON_Y_POSITION[0] + BUTTON_HEIGHT)
-        sortCardsByRank();
+        sortCardsByRank(cards);
       else if (pos.y >= BUTTON_Y_POSITION[1] && pos.y <= BUTTON_Y_POSITION[1] + BUTTON_HEIGHT)
-        sortCardsBySuit();
+        sortCardsBySuit(cards);
       else if (pos.y >= BUTTON_Y_POSITION[2] && pos.y <= BUTTON_Y_POSITION[2] + BUTTON_HEIGHT)
         submitCardsAndUpdate();
       else if (pos.y >= BUTTON_Y_POSITION[3] && pos.y <= BUTTON_Y_POSITION[3] + BUTTON_HEIGHT)
@@ -180,15 +168,14 @@ window.addEventListener("load", function(){
     ctx.clearRect(0,0,GAME_WIDTH,GAME_HEIGHT);
 
     // Printing cards on screen
-    for (i = 0; i < cards.length; i++){
-      ctx.drawImage(sprites[cards[i].val], cardsCoords[i].x,
-                    cardsCoords[i].y - cards[i].selected*20);
-    }
-    for (i = 0; i < validSubmission.length; i++){
-      console.log(validSubmission[i])
-      ctx.drawImage(sprites[validSubmission[i]], middleCardsCoords[i].x,
-                    middleCardsCoords[i].y);
-    }
+    cards.forEach(function(e, i){
+      ctx.drawImage(sprites[e.val], cards[i].x,
+                    cards[i].y - e.selected*20);
+    });
+    validSubmission.forEach(function(e, i){
+      ctx.drawImage(sprites[e.val], validSubmission[i].x,
+                    validSubmission[i].y);
+    });
 
     // Drawing buttons
     ctx.fillStyle = "#000000";
@@ -211,13 +198,11 @@ window.addEventListener("load", function(){
   };
 
   var step = function(){
-    update();
     draw();
-
+    update();
     if(!gameEnds){
       window.requestAnimationFrame(step);
     }
-
   };
 
   load();
