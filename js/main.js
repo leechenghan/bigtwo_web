@@ -62,7 +62,7 @@
       //change img source for each?
       var iter = $('#' + location + '-container').children().first();
       arr.forEach(function(e,i){
-        iter.src = e.src;
+        iter.html(e.src);
         iter = iter.next();
       });
   };
@@ -70,7 +70,7 @@
   // Selects a card from the deck at random, removes and returns it
   var drawCard = function(){
     var random = Math.floor(Math.random() * deck.length);
-    return deck.splice(random, 1);
+    return deck.splice(random, 1)[0];
   };
 
   // Logic after a card is submitted. Checks if move is valid and handles
@@ -81,8 +81,6 @@
         if (cards[i].selected)
           validSubmission.push({
             val: cards.splice(i, 1)[0].val,
-            x: 0,
-            y: 0
           });
       }
       updateCardsCoords(cards, "self-cards");
@@ -98,40 +96,62 @@
   var pass = function(){
     // Draw a card
     // TODO: && myTurn
-    if (deck.length != 0)
+    if (deck.length != 0){
+      var newVal = drawCard();
       cards.push({
-        val: drawCard(),
+        val: newVal,
         selected: false,
-        x: 0,
-        y: 0
+        src: sprites[newVal]
       });
-    validSubmission.length = 0;
+    }
     updateCardsCoords(cards, "self-cards");
     updateCardsCoords(validSubmission, "middle-cards");
     //TODO: change turns
   };
 
+// TODO: improve logic for finding buttons
+$(document).ready(function(){
   // Events for button clicks
-  $('.sort-rank-button').on('click', sortCardsByRank());
-  $('.sort-suit-button').on('click', sortCardsBySuit());
-  $('.submit-button').on('click', submitCardsAndUpdate());
-  $('.pass-button').on('click', pass());
-  $('.cards-container').on('click', 'select-card', function(){
+  $('#button-container')
+    .children()
+    .first()
+    .children()
+    .on('click', sortCardsByRank);
+  $('#button-container')
+    .children()
+    .first().next()
+    .children()
+    .on('click', sortCardsBySuit);
+  $('#button-container')
+    .children()
+    .last().prev()
+    .children()
+    .on('click', submitCardsAndUpdate);
+  $('#button-container')
+    .children()
+    .last()
+    .children()
+    .on('click', pass);
+
+  $('#self-cards-container')
+    .on('click', '.self-cards', function(){
+    console.log($(this));
     $(this).toggleClass('selected');
     //change backend property of card to selected
   });
-
+});
 
 window.addEventListener("load", function(){
 
+  load();
+
   // Initial set up - draws 17 cards for player and opponent
   for (i = 0; i < 17; i++){
+        var newVal = drawCard();
         cards.push({
-          val: drawCard(),
+          val: newVal,
           selected: false,
-          x: 0,
-          y: 0,
-          src: sprites[self.val]
+          src: sprites[newVal-1]
         });
         oppCards.push(drawCard());
   }
