@@ -1,3 +1,19 @@
-canvas {
-  border: 1px solid black
+#button-container {
+  width: 1000px;
+  background-color: #DDD;
+  padding: 8px;
+  float: left;
+  margin: 4px;
+}
+
+.button-area {
+  padding: 8px;
+}
+
+.button {
+  width: 250px;
+  font-size: 20px;
+  padding: 8px;
+  border: 2px solid green;
+
 }
