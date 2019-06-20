@@ -23,7 +23,7 @@
 
 #self-cards-container {
   width: 800;
-  height: 200;
+  height: auto;
   background-color: #DDD;
   padding: 8px;
   margin: 4px;
@@ -48,6 +48,6 @@
   margin: 1px;
 }
 
-#selected {
-
+.selected {
+  border: 1px solid red;
 }

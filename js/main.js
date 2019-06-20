@@ -20,6 +20,7 @@
     }
   };
 
+  // Loads card images into var array
   var load = function (){
     for (i = 1; i < 53; i++){
       sprites.push(new Image());
@@ -66,7 +67,7 @@
     });
   };
 
-  // Selects a card from the deck at random, removes and returns it
+  // Selects a card from the deck at random, removes from deck and returns it
   var drawCard = function(){
     var random = Math.floor(Math.random() * deck.length);
     return deck.splice(random, 1)[0];
@@ -98,6 +99,7 @@
     update();
   };
 
+  // Passes your turn
   var pass = function(){
     // Draw a card
     // TODO: && myTurn
@@ -144,9 +146,11 @@ $(document).ready(function(){
     .on('click', '.self-cards', function(){
     //fix toggling class
     $(this).toggleClass('selected');
+    console.log($(this));
     cards[$(this).index()].selected = !cards[$(this).index()].selected;
   });
 });
+
 
 window.addEventListener("load", function(){
 
