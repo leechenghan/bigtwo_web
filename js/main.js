@@ -5,6 +5,7 @@
   var sprites = [];
   var deck = [];
   var sprites = [];
+  var submitted = [];
   var cards = [];
   var oppCards = [];
   var validSubmission = [];
@@ -64,22 +65,33 @@
     arr.forEach(function(e,i){
       iter.html(e.src);
       iter = iter.next();
+      if (!e.selected){
+        $(this).toggleClass('selected');
+      }
     });
   };
 
   // Selects a card from the deck at random, removes from deck and returns it
   var drawCard = function(){
-    var random = Math.floor(Math.random() * deck.length);
-    return deck.splice(random, 1)[0];
+    return deck.splice(Math.floor(Math.random() * deck.length), 1)[0];
   };
 
   // Logic after a card is submitted. Checks if move is valid and handles
   var submitCardsAndUpdate = function(){
     //TODO: (Checker.checkValidity(validSubmission, submitted) && myTurn)
-    if (1){
+    submitted.length = 0;
+    cards.forEach(function(e, i){
+      if (e.selected){
+        submitted.push(e.val);
+      }
+    });
+    console.log(submitted);
+    console.log(checkValidity(validSubmission, submitted));
+    if (checkValidity(validSubmission, submitted)){
       validSubmission.length = 0;
       for (i = cards.length-1; i >= 0; i--){
         if (cards[i].selected){
+          cards[i].selected = false;
           card = cards.splice(i, 1)[0];
           validSubmission.push({
             val: card.val,
@@ -87,15 +99,11 @@
           });
         }
       }
-      console.log(validSubmission);
       updateCardsPos(cards, "self-cards");
       sortCardsByRank(validSubmission);
       updateCardsPos(validSubmission, "middle-cards")
       //change turns
     }
-    cards.forEach(function(e, i){
-          e.selected = false;
-    });
     update();
   };
 
@@ -111,6 +119,7 @@
         src: sprites[newVal]
       });
     }
+    validSubmission.length = 0;
     updateCardsPos(cards, "self-cards");
     updateCardsPos(validSubmission, "middle-cards");
     //TODO: change turns
@@ -146,7 +155,7 @@ $(document).ready(function(){
     .on('click', '.self-cards', function(){
     //fix toggling class
     $(this).toggleClass('selected');
-    console.log($(this));
+    console.log(cards[$(this).index()].val);
     cards[$(this).index()].selected = !cards[$(this).index()].selected;
   });
 });
