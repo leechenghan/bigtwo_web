@@ -9,15 +9,15 @@
   var oppCards = [];
   var validSubmission = [];
   var gameEnds = false;
-
+  var card = undefined;
 
   // Checks if game is over
   var update = function(){
-    /*if (cards.length == 0 || oppCards.length == 0){
+    if (cards.length == 0 || oppCards.length == 0){
         gameEnds = true;
         alert('Game Over');
         window.location = "";
-    }*/
+    }
   };
 
   var load = function (){
@@ -29,42 +29,41 @@
   };
 
   // Sorts player cards by rank
-  var sortCardsByRank = function(){
-    cards.sort(function(a, b){
+  var sortCardsByRank = function(arr){
+    arr.sort(function(a, b){
       return a.val - b.val;
     });
-    updateCardsCoords(cards, "self-cards");
+    updateCardsPos(cards, "self-cards");
   };
 
   // Sorts player cards by suit
   var sortCardsBySuit = function(){
-    sortCardsByRank();
+    sortCardsByRank(cards);
     cards.sort(function(a,b){
       return a.val % 4 - b.val % 4;
     });
-    updateCardsCoords(cards, "self-cards");
+    updateCardsPos(cards, "self-cards");
   };
 
-  // Updates cards array keeping it consistent with html objects displayed
-  var updateCardsCoords = function(arr, location){
-      var change = arr.length - $("#" + location + "-container >").length;
-      if (change > 0){
-        for (i = 0; i < change; i++){
-          $('#' + location + '-container').append('<div class=' + location + '></div>')
-        }
+  // Updates cards array to be consistent with html objects displayed
+  var updateCardsPos = function(arr, location){
+    var change = arr.length - $("#" + location + "-container >").length;
+    if (change > 0){
+      for (i = 0; i < change; i++){
+        $('#' + location + '-container').append('<div class=' + location + '></div>')
       }
-      else if (change < 0){
-        for (i = 0; i < -change; i++){
-          $('#' + location + '-container').children(location).last().remove();
-        }
+    }
+    else if (change < 0){
+      for (i = 0; i < -change; i++){
+        $('#' + location + '-container').children().last().remove();
       }
+    }
 
-      //change img source for each?
-      var iter = $('#' + location + '-container').children().first();
-      arr.forEach(function(e,i){
-        iter.html(e.src);
-        iter = iter.next();
-      });
+    var iter = $('#' + location + '-container').children().first();
+    arr.forEach(function(e,i){
+      iter.html(e.src);
+      iter = iter.next();
+    });
   };
 
   // Selects a card from the deck at random, removes and returns it
@@ -77,14 +76,20 @@
   var submitCardsAndUpdate = function(){
     //TODO: (Checker.checkValidity(validSubmission, submitted) && myTurn)
     if (1){
+      validSubmission.length = 0;
       for (i = cards.length-1; i >= 0; i--){
-        if (cards[i].selected)
+        if (cards[i].selected){
+          card = cards.splice(i, 1)[0];
           validSubmission.push({
-            val: cards.splice(i, 1)[0].val,
+            val: card.val,
+            src: card.src
           });
+        }
       }
-      updateCardsCoords(cards, "self-cards");
-      updateCardsCoords(validSubmission, "middle-cards")
+      console.log(validSubmission);
+      updateCardsPos(cards, "self-cards");
+      sortCardsByRank(validSubmission);
+      updateCardsPos(validSubmission, "middle-cards")
       //change turns
     }
     cards.forEach(function(e, i){
@@ -104,8 +109,8 @@
         src: sprites[newVal]
       });
     }
-    updateCardsCoords(cards, "self-cards");
-    updateCardsCoords(validSubmission, "middle-cards");
+    updateCardsPos(cards, "self-cards");
+    updateCardsPos(validSubmission, "middle-cards");
     //TODO: change turns
   };
 
@@ -116,7 +121,9 @@ $(document).ready(function(){
     .children()
     .first()
     .children()
-    .on('click', sortCardsByRank);
+    .on('click', function(){
+      sortCardsByRank(cards)
+    });
   $('#button-container')
     .children()
     .first().next()
@@ -135,9 +142,9 @@ $(document).ready(function(){
 
   $('#self-cards-container')
     .on('click', '.self-cards', function(){
-    console.log($(this));
+    //fix toggling class
     $(this).toggleClass('selected');
-    //change backend property of card to selected
+    cards[$(this).index()].selected = !cards[$(this).index()].selected;
   });
 });
 
@@ -155,7 +162,5 @@ window.addEventListener("load", function(){
         });
         oppCards.push(drawCard());
   }
-
-  updateCardsCoords(cards, "self-cards");
-
+  updateCardsPos(cards, "self-cards");
 });

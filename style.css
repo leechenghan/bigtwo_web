@@ -16,6 +16,11 @@
   float: left;
 }
 
+#middle-cards-container .middle-cards {
+  float: left;
+  margin: 1px;
+}
+
 #self-cards-container {
   width: 800;
   height: 200;
@@ -44,6 +49,5 @@
 }
 
 #selected {
-  border: 4px solid green;
-  margin: 10px;
+
 }
