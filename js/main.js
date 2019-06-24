@@ -9,6 +9,7 @@
   var validSubmission = [];
   var gameEnds = false;
   var card = undefined;
+  var turn = false;
 
   // Checks if game is over
   var update = function(){
@@ -55,39 +56,35 @@
   // Updates cards array to be consistent with html objects displayed
   var updateCardDisplay = function(arr, location){
 
-    updateHTMLContainers(arr, location);
+    updateCardsHTML(arr, location);
 
-    arr.forEach(function(e,i){
-      $('#' + location + '-container').children().eq(i).html(deck[e.val-1].src);
+    cards.forEach(function(e, i){
+      if (!$('#self-cards-container')
+            .children()
+            .eq(i)
+            .hasClass('selected')
+          && e.selected
+      )
+        $('#self-cards-container')
+          .children()
+          .eq(i)
+          .addClass('selected');
+
+      else if ($('#self-cards-container')
+                  .children()
+                  .eq(i)
+                  .hasClass('selected')
+               && !e.selected
+      )
+        $('#self-cards-container')
+          .children()
+          .eq(i)
+          .removeClass('selected');
     });
-
-    if (location = "self-cards"){
-      cards.forEach(function(e, i){
-        if (e.selected && !$('#self-cards-container').
-                              children()
-                              .eq(i)
-                              .hasClass('selected')
-        )
-          $('#self-cards-container')
-            .children()
-            .eq(i)
-            .addClass('selected');
-
-        else if (!e.selected && $('#self-cards-container')
-                                    .children()
-                                    .eq(i)
-                                    .hasClass('selected')
-        )
-          $('#self-cards-container')
-            .children()
-            .eq(i)
-            .removeClass('selected');
-      });
-    }
   };
 
   // Ensures HTML containers consistent with the change in number of cards
-  var updateHTMLContainers = function(arr, location){
+  var updateCardsHTML = function(arr, location){
     var change = arr.length - $("#" + location + "-container >").length;
     if (change > 0){
       for (i = 0; i < change; i++){
@@ -99,6 +96,10 @@
         $('#' + location + '-container').children().last().remove();
       }
     }
+
+    arr.forEach(function(e,i){
+      $('#' + location + '-container').children().eq(i).html(deck[e.val-1].src);
+    });
   }
 
   // Selects a card from the deck at random, removes from deck and returns it
@@ -108,7 +109,6 @@
 
   // Logic after a card is submitted. Checks if move is valid and handles
   var submitCardsAndUpdate = function(){
-    //TODO: (Checker.checkValidity(validSubmission, submitted) && myTurn)
     submitted.length = 0;
     cards.forEach(function(e, i){
       $('#self-cards-container').children().eq(i).removeClass('selected');
@@ -118,7 +118,8 @@
       }
     });
     if (checkValidity(sortCardsByRank(validSubmission),
-                      sortCardsByRank(submitted)))
+                      sortCardsByRank(submitted))
+        && turn)
       {
       validSubmission = JSON.parse(JSON.stringify(submitted));
       var len = validSubmission.length-1;
@@ -133,7 +134,7 @@
       updateCardDisplay(cards, "self-cards");
       sortCardsByRank(validSubmission);
       updateCardDisplay(validSubmission, "middle-cards")
-      //change turns
+      turn = false;
     }
     update();
   };
@@ -142,15 +143,16 @@
   // Passes your turn
   var pass = function(){
     // Draw a card
-    // TODO: && myTurn
-    if (deckLeft.length != 0){
-      cards.push(deck[drawCard()-1]);
+    if (turn){
+      if (deckLeft.length != 0){
+        cards.push(deck[drawCard()-1]);
+      }
+      validSubmission.length = 0;
+      submitted.length = 0;
+      updateCardDisplay(cards, "self-cards");
+      updateCardDisplay(validSubmission, "middle-cards");
+      turn = false;
     }
-    validSubmission.length = 0;
-    submitted.length = 0;
-    updateCardDisplay(cards, "self-cards");
-    updateCardDisplay(validSubmission, "middle-cards");
-    //TODO: change turns
   };
 
 // TODO: improve logic for finding buttons
@@ -161,7 +163,7 @@ $(document).ready(function(){
     .first()
     .children()
     .on('click', function(){
-      sortCardsByRank(cards)
+      sortCardsByRank(cards);
     });
   $('#button-container')
     .children()
@@ -195,7 +197,12 @@ window.addEventListener("load", function(){
   // Initial set up - draws 17 cards for player and opponent
   for (i = 0; i < 17; i++){
         cards.push(deck[drawCard()-1]);
-        oppCards.push(drawCard());
+        oppCards.push(deck[drawCard()-1]);
   }
+  sortCardsByRank(cards);
+  sortCardsByRank(oppCards);
+
+  turn = cards[0].val > oppCards[0].val;
+
   updateCardDisplay(cards, "self-cards");
 });

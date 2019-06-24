@@ -1,85 +1,54 @@
 // We receuve cards in ascending order of card strength
 
+// Checks if the current submission beats the previous submission
 var checkValidity = function(prev, curr){
-  dummyPair = [{ val: 1 }, { val: 1 }];
   dummyCombo = [{ val: 1 }, { val: 1 }, { val: 5 }, { val: 6 }, { val: 9 }];
 
   if (prev.length == 0){
-    if (curr.length == 1)
+    if (curr.length == 1 ||
+       (curr.length == 5 && checkCombo(dummyCombo, curr)) ||
+       (curr.length == 2 && isSameRank(curr[0], curr[1])))
       return true;
-    else if (curr.length == 2)
-      return isSameRank(curr[0], curr[1]);
-    else if (curr.length == 5)
-      return checkCombo(dummyCombo, curr);
     else
       return false;
   }
   else if (curr.length != prev.length)
     return false;
-  if (curr.length == 1)
-    return checkHighCard(prev, curr);
-  else if (curr.length == 2){
+  if (curr.length == 2)
     return checkPair(prev, curr);
-  }
   else if (curr.length == 5)
     return checkCombo(prev, curr);
   else
-    return false;
+    return curr[0].val > prev[0].val;
 }
 
-var checkHighCard = function(prev, curr){
-  return curr[0].val > prev[0].val;
-}
-
+// Checks if submitted pair beats previous submitted pair
 var checkPair = function(prev, curr){
-  if (!isSameRank(curr[0], curr[1]))
-    return false;
-
-  return curr[1].val > prev[1].val;
+  if (isSameRank(curr[0], curr[1]))
+    return curr[1].val > prev[1].val;
+  return false;
 }
 
+// Checks if submitted combo beats previous submitted combo
 var checkCombo = function(prev, curr){
-  var prevStrength = 0;
-  var currStrength = 0;
 
-  if (checkStraight(prev))
-    prevStrength += 3;
-  if (checkStraight(curr))
-    currStrength += 3;
-  if (checkFlush(prev))
-    prevStrength += 4;
-  if (checkFlush(curr))
-    currStrength += 4;
-  if (checkFullHouse(prev))
-    prevStrength += 5;
-  if (checkFullHouse(curr))
-    currStrength += 5;
-  if (checkFourOfAKind(prev))
-    prevStrength += 6;
-  if (checkFourOfAKind(curr))
-    currStrength += 6;
+  var prevStrength = 3*checkStraight(prev) + 4*checkFlush(prev) +
+                  5*checkFullHouse(prev) + 6*checkFourOfAKind(prev);
 
-  console.log('prevStrength: ' + prevStrength);
-  console.log('currStrength: ' + currStrength);
+  var prevStrength = 3*checkStraight(curr) + 4*checkFlush(curr) +
+                  5*checkFullHouse(curr) + 6*checkFourOfAKind(curr);
 
-  if (prevStrength < currStrength)
-    return true;
-  else if (prevStrength > currStrength)
-    return false;
-  else if (prevStrength == 3 || prevStrength == 4 || prevStrength == 7)
+  // Middle card is same rank as the three-of-a-kind of four-of-a-kind
+  if (prevStrength == 5 || prevStrength == 6)
+    return curr[2].val > prev[2].val;
+  // Comparing final card is sufficient for straight/flush/straightflush
+  else if (prevStrength >= 3 && prevStrength <= 7)
     return curr[4].val > prev[4].val;
-  else{
-    if (checkThreeOfAKind(curr) && checkThreeOfAKind(prev))
-      return curr[0].val > prev[0].val;
-    else if (checkThreeOfAKind(curr) && checkThreeOfAKind(prev.splice(2)))
-      return curr[0].val > prev[4].val;
-    else if (checkThreeOfAKind(curr.splice(2)) && checkThreeOfAKind(prev.splice(2)))
-      return curr[4].val > prev[4].val;
-    else
-      return curr[4].val > prev[0].val;
-  }
+  else
+    return currStrength > prevStrength
 }
 
+// Checks if an array is a straight
 var checkStraight = function(arr){
   return (rankDiffOne(arr[0], arr[1]) &&
           rankDiffOne(arr[1], arr[2]) &&
@@ -87,6 +56,7 @@ var checkStraight = function(arr){
           rankDiffOne(arr[3], arr[4]));
 }
 
+// Checks if an array is a flush
 var checkFlush = function(arr){
   return (isSameSuit(arr[0], arr[1]) &&
           isSameSuit(arr[1], arr[2]) &&
@@ -94,30 +64,22 @@ var checkFlush = function(arr){
           isSameSuit(arr[3], arr[4]));
 }
 
+// Checks if an array is a full house
 var checkFullHouse = function(arr){
-  return ((isSameRank(arr[0], arr[1]) &&
-           isSameRank(arr[1], arr[2]) &&
-           isSameRank(arr[3], arr[4]))
-          ||
-          (isSameRank(arr[0], arr[1]) &&
-           isSameRank(arr[2], arr[3]) &&
-           isSameRank(arr[3], arr[4])));
-}
-
-var checkThreeOfAKind = function(arr){
-  return (isSameRank(arr[0], arr[1]) &&
-          isSameRank(arr[1], arr[2]) &&
-          isSameRank(arr[2], arr[3]));
+  return (checkNOfAKind(arr, 4) == 3 &&
+          isSameRank(arr[0], arr[1]) || isSameRank(arr[3], arr[4]));
 }
 
 var checkFourOfAKind = function(arr){
-  return ((isSameRank(arr[1], arr[2]) &&
-           isSameRank(arr[2], arr[3]) &&
-           isSameRank(arr[3], arr[4]))
-          ||
-          (isSameRank(arr[0], arr[1]) &&
-           isSameRank(arr[1], arr[2]) &&
-           isSameRank(arr[2], arr[3])));
+  return (checkNOfAKind(arr, 5) == 4);
+}
+
+// Checks how many similar elements there are in arr, comparisons with middle
+var checkNOfAKind = function(arr, n){
+  for (i = 0; i < n; i++){
+    bool += isSameRank(arr[(arr.length-1)/2], arr[i+1]);
+  }
+  return bool;
 }
 
 var isSameSuit = function(first, second){
