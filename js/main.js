@@ -1,8 +1,6 @@
-
-  GAME_WIDTH = 800;
-  GAME_HEIGHT = 200;
-
+  var newCardStructure = [];
   var sprites = [];
+  var deckLeft = [];
   var deck = [];
   var sprites = [];
   var submitted = [];
@@ -26,7 +24,13 @@
     for (i = 1; i < 53; i++){
       sprites.push(new Image());
       sprites[i-1].src = 'img/' + i + '.png';
-      deck.push(i);
+      deckLeft.push(i);
+      deck.push({
+        val: i,
+        idx: undefined,
+        src: sprites[i-1],
+        selected: false
+      });
     }
   };
 
@@ -35,7 +39,8 @@
     arr.sort(function(a, b){
       return a.val - b.val;
     });
-    updateCardsPos(cards, "self-cards");
+    updateCardDisplay(cards, "self-cards");
+    return arr;
   };
 
   // Sorts player cards by suit
@@ -44,11 +49,45 @@
     cards.sort(function(a,b){
       return a.val % 4 - b.val % 4;
     });
-    updateCardsPos(cards, "self-cards");
+    updateCardDisplay(cards, "self-cards");
   };
 
   // Updates cards array to be consistent with html objects displayed
-  var updateCardsPos = function(arr, location){
+  var updateCardDisplay = function(arr, location){
+
+    updateHTMLContainers(arr, location);
+
+    arr.forEach(function(e,i){
+      $('#' + location + '-container').children().eq(i).html(deck[e.val-1].src);
+    });
+
+    if (location = "self-cards"){
+      cards.forEach(function(e, i){
+        if (e.selected && !$('#self-cards-container').
+                              children()
+                              .eq(i)
+                              .hasClass('selected')
+        )
+          $('#self-cards-container')
+            .children()
+            .eq(i)
+            .addClass('selected');
+
+        else if (!e.selected && $('#self-cards-container')
+                                    .children()
+                                    .eq(i)
+                                    .hasClass('selected')
+        )
+          $('#self-cards-container')
+            .children()
+            .eq(i)
+            .removeClass('selected');
+      });
+    }
+  };
+
+  // Ensures HTML containers consistent with the change in number of cards
+  var updateHTMLContainers = function(arr, location){
     var change = arr.length - $("#" + location + "-container >").length;
     if (change > 0){
       for (i = 0; i < change; i++){
@@ -60,20 +99,11 @@
         $('#' + location + '-container').children().last().remove();
       }
     }
-
-    var iter = $('#' + location + '-container').children().first();
-    arr.forEach(function(e,i){
-      iter.html(e.src);
-      iter = iter.next();
-      if (!e.selected){
-        $(this).toggleClass('selected');
-      }
-    });
-  };
+  }
 
   // Selects a card from the deck at random, removes from deck and returns it
   var drawCard = function(){
-    return deck.splice(Math.floor(Math.random() * deck.length), 1)[0];
+    return deckLeft.splice(Math.floor(Math.random() * deckLeft.length), 1)[0];
   };
 
   // Logic after a card is submitted. Checks if move is valid and handles
@@ -81,47 +111,45 @@
     //TODO: (Checker.checkValidity(validSubmission, submitted) && myTurn)
     submitted.length = 0;
     cards.forEach(function(e, i){
+      $('#self-cards-container').children().eq(i).removeClass('selected');
       if (e.selected){
-        submitted.push(e.val);
+        e.selected = false
+        submitted.push(e);
       }
     });
-    console.log(submitted);
-    console.log(checkValidity(validSubmission, submitted));
-    if (checkValidity(validSubmission, submitted)){
-      validSubmission.length = 0;
+    if (checkValidity(sortCardsByRank(validSubmission),
+                      sortCardsByRank(submitted)))
+      {
+      validSubmission = JSON.parse(JSON.stringify(submitted));
+      var len = validSubmission.length-1;
       for (i = cards.length-1; i >= 0; i--){
-        if (cards[i].selected){
-          cards[i].selected = false;
-          card = cards.splice(i, 1)[0];
-          validSubmission.push({
-            val: card.val,
-            src: card.src
-          });
+        if (len < 0)
+          break;
+        else if (cards[i].val == validSubmission[len].val){
+          cards.splice(i, 1)[0];
+          len--;
         }
       }
-      updateCardsPos(cards, "self-cards");
+      updateCardDisplay(cards, "self-cards");
       sortCardsByRank(validSubmission);
-      updateCardsPos(validSubmission, "middle-cards")
+      updateCardDisplay(validSubmission, "middle-cards")
       //change turns
     }
     update();
   };
 
+
   // Passes your turn
   var pass = function(){
     // Draw a card
     // TODO: && myTurn
-    if (deck.length != 0){
-      var newVal = drawCard();
-      cards.push({
-        val: newVal,
-        selected: false,
-        src: sprites[newVal]
-      });
+    if (deckLeft.length != 0){
+      cards.push(deck[drawCard()-1]);
     }
     validSubmission.length = 0;
-    updateCardsPos(cards, "self-cards");
-    updateCardsPos(validSubmission, "middle-cards");
+    submitted.length = 0;
+    updateCardDisplay(cards, "self-cards");
+    updateCardDisplay(validSubmission, "middle-cards");
     //TODO: change turns
   };
 
@@ -137,12 +165,12 @@ $(document).ready(function(){
     });
   $('#button-container')
     .children()
-    .first().next()
+    .eq(1)
     .children()
     .on('click', sortCardsBySuit);
   $('#button-container')
     .children()
-    .last().prev()
+    .eq(2)
     .children()
     .on('click', submitCardsAndUpdate);
   $('#button-container')
@@ -155,7 +183,6 @@ $(document).ready(function(){
     .on('click', '.self-cards', function(){
     //fix toggling class
     $(this).toggleClass('selected');
-    console.log(cards[$(this).index()].val);
     cards[$(this).index()].selected = !cards[$(this).index()].selected;
   });
 });
@@ -167,13 +194,8 @@ window.addEventListener("load", function(){
 
   // Initial set up - draws 17 cards for player and opponent
   for (i = 0; i < 17; i++){
-        var newVal = drawCard();
-        cards.push({
-          val: newVal,
-          selected: false,
-          src: sprites[newVal-1]
-        });
+        cards.push(deck[drawCard()-1]);
         oppCards.push(drawCard());
   }
-  updateCardsPos(cards, "self-cards");
+  updateCardDisplay(cards, "self-cards");
 });

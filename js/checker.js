@@ -2,7 +2,7 @@
 
 var checkValidity = function(prev, curr){
   dummyPair = [{ val: 1 }, { val: 1 }];
-  dummyCombo = [{ val: 1 }, { val: 1 }, { val: 5 }, { val: 5 }, { val: 9 }];
+  dummyCombo = [{ val: 1 }, { val: 1 }, { val: 5 }, { val: 6 }, { val: 9 }];
 
   if (prev.length == 0){
     if (curr.length == 1)
@@ -32,7 +32,6 @@ var checkHighCard = function(prev, curr){
 }
 
 var checkPair = function(prev, curr){
-  console.log('issamerank is: ' + isSameRank(curr[0], curr[1]));
   if (!isSameRank(curr[0], curr[1]))
     return false;
 
@@ -50,7 +49,7 @@ var checkCombo = function(prev, curr){
   if (checkFlush(prev))
     prevStrength += 4;
   if (checkFlush(curr))
-      prevStrength += 4;
+    currStrength += 4;
   if (checkFullHouse(prev))
     prevStrength += 5;
   if (checkFullHouse(curr))
@@ -59,6 +58,9 @@ var checkCombo = function(prev, curr){
     prevStrength += 6;
   if (checkFourOfAKind(curr))
     currStrength += 6;
+
+  console.log('prevStrength: ' + prevStrength);
+  console.log('currStrength: ' + currStrength);
 
   if (prevStrength < currStrength)
     return true;
