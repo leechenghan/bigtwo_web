@@ -4,7 +4,7 @@
 var checkValidity = function(prev, curr){
   dummyCombo = [{ val: 1 }, { val: 1 }, { val: 5 }, { val: 6 }, { val: 9 }];
 
-  if (prev.length == 0){
+  if (prev.length == 0 && prev){
     if (curr.length == 1 ||
        (curr.length == 5 && checkCombo(dummyCombo, curr)) ||
        (curr.length == 2 && isSameRank(curr[0], curr[1])))
