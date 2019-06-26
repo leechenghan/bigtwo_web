@@ -1,33 +1,18 @@
-//filewatcher.js
-
 const fs = require('fs'),
       path = require('path'),
-      express = require('express'),
-      server = express();
+      express = require('express');
 
-server.set('port', process.env.PORT || 3000);
+var app = express();
+var server = app.listen(3000);
+var io = require('socket.io').listen(server);
 
-server.get('/', (req,res)=>{
-  res.sendFile('index.html', {root: 'js/'});
-});
+app.set('port', process.env.PORT || 3000);
 
-server.get('/about', (req,res)=>{
-  res.sendFile('index.html', {root: 'js/'});
-});
+app.use(express.static('public'));
 
-server.use(express.static(__dirname + '/js'));
-
-server.use((req,res)=>{
-   res.type('text/plain');
-   res.status(505);
-   res.send('Error page');
-});
-
-server.on('data', (data) => {
-    console.log('received some shit');
-});
-
-//Binding to a port
-server.listen(3000, ()=>{
-  console.log('Express server started at port 3000');
+io.on('connection', function(socket){
+  console.log('made socket connection');
+  socket.on('gameState', (data) => {
+    io.sockets.emit('gameState', data);
+  });
 });
