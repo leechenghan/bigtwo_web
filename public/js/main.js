@@ -1,25 +1,45 @@
 // TODO: Think about a global game state object. can pass game state thru websocket too
 
-  var newCardStructure = [],
-      sprites = [],
-      deckLeft = [],
-      deck = [],
+  var sprites = [],
       submitted = [],
-      cards = [],
-      oppCards = [],
-      validSubmission = [],
-      gameEnds = false,
-      card = undefined,
-      turn = false;
+      deck = [],
+      gameStart = false,
+      playerBool = 1,
+      gameEnds = false;
+
+  var gameState = {
+    deckLeft: [],
+    validSubmission: [],
+    cards: [],
+    turn: undefined
+  }
+
+  for (i = 0; i < 2; i++){
+    gameState.cards.push([]);
+  }
+
+  var player = undefined;
 
   var socket = io.connect('http://localhost:3000');
-  var receive = socket.on('gameState', function(data){
-      console.log(data.pass);
+
+  socket.on('init', (data) => {
+    player = data.host ? 1 : 0;
+    playerBool = data.host;
+    gameStart = true;
+  });
+
+  socket.on('firstGameState', function(data){
+    socket.emit('gameState', gameState);
+  });
+
+  socket.on('gameState', function(data){
+    if (verify(data))
+      gameState = data;
   });
 
   // Checks if game is over
   var update = function(){
-    if (cards.length == 0 || oppCards.length == 0){
+    if (gameState.cards[0].length == 0 || gameState.cards[1].length == 0){
         gameEnds = true;
         alert('Game Over');
         window.location = "";
@@ -31,11 +51,10 @@
     for (i = 1; i < 53; i++){
       sprites.push(new Image());
       sprites[i-1].src = '../img/' + i + '.png';
-      deckLeft.push(i);
+      gameState.deckLeft.push(i);
       deck.push({
         val: i,
         idx: undefined,
-        src: sprites[i-1],
         selected: false
       });
     }
@@ -46,25 +65,24 @@
     arr.sort(function(a, b){
       return a.val - b.val;
     });
-    updateCardDisplay(cards, "self-cards");
     return arr;
   };
 
   // Sorts player cards by suit
   var sortCardsBySuit = function(){
-    sortCardsByRank(cards);
-    cards.sort(function(a,b){
+    sortCardsByRank(gameState.cards[player]);
+    gameState.cards[player].sort(function(a,b){
       return a.val % 4 - b.val % 4;
     });
-    updateCardDisplay(cards, "self-cards");
   };
 
   // Updates cards array to be consistent with html objects displayed
   var updateCardDisplay = function(arr, location){
 
+    console.log(arr);
     updateCardsHTML(arr, location);
 
-    cards.forEach(function(e, i){
+    gameState.cards[player].forEach(function(e, i){
       if (!$('#self-cards-container')
             .children()
             .eq(i)
@@ -104,43 +122,44 @@
     }
 
     arr.forEach(function(e,i){
-      $('#' + location + '-container').children().eq(i).html(deck[e.val-1].src);
+      console.log(e.val);
+      $('#' + location + '-container').children().eq(i).html(sprites[e.val-1].src);
     });
   }
 
   // Selects a card from the deck at random, removes from deck and returns it
   var drawCard = function(){
-    return deckLeft.splice(Math.floor(Math.random() * deckLeft.length), 1)[0];
+    return gameState.deckLeft.splice(Math.floor(Math.random() * gameState.deckLeft.length), 1)[0];
   };
 
   // Logic after a card is submitted. Checks if move is valid and handles
   var submitCardsAndUpdate = function(){
     submitted.length = 0;
-    cards.forEach(function(e, i){
+    gameState.cards[player].forEach(function(e, i){
       $('#self-cards-container').children().eq(i).removeClass('selected');
       if (e.selected){
         e.selected = false
         submitted.push(e);
       }
     });
-    if (checkValidity(sortCardsByRank(validSubmission),
+    if (checkValidity(sortCardsByRank(gameState.validSubmission),
                       sortCardsByRank(submitted))
-        && turn)
+        && gameState.turn)
       {
-      validSubmission = JSON.parse(JSON.stringify(submitted));
-      var len = validSubmission.length-1;
-      for (i = cards.length-1; i >= 0; i--){
+      gameState.validSubmission = JSON.parse(JSON.stringify(submitted));
+      var len = gameState.validSubmission.length-1;
+      for (i = gameState.cards[player].length-1; i >= 0; i--){
         if (len < 0)
           break;
-        else if (cards[i].val == validSubmission[len].val){
-          cards.splice(i, 1)[0];
+        else if (gameState.cards[player][i].val == gameState.validSubmission[len].val){
+          gameState.cards[player].splice(i, 1)[0];
           len--;
         }
       }
-      updateCardDisplay(cards, "self-cards");
-      sortCardsByRank(validSubmission);
-      updateCardDisplay(validSubmission, "middle-cards")
-      turn = false;
+      updateCardDisplay(gameState.cards[player], "self-cards");
+      sortCardsByRank(gameState.validSubmission);
+      updateCardDisplay(gameState.validSubmission, "middle-cards")
+      gameState.turn = !player;
     }
     update();
   };
@@ -149,34 +168,50 @@
   // Passes your turn
   var pass = function(){
     // Draw a card
-    if (turn){
-      if (deckLeft.length != 0){
-        cards.push(deck[drawCard()-1]);
+    if (gameState.turn == player){
+      if (gameState.deckLeft.length != 0){
+        gameState.cards[player].push(deck[drawCard()-1]);
       }
-      validSubmission.length = 0;
+      gameState.validSubmission.length = 0;
       submitted.length = 0;
-      updateCardDisplay(cards, "self-cards");
-      updateCardDisplay(validSubmission, "middle-cards");
-      turn = false;
+      updateCardDisplay(gameState.cards[player], "self-cards");
+      updateCardDisplay(gameState.validSubmission, "middle-cards");
+      gameState.turn = false;
     }
-    socket.emit('gameState', { pass: true});
+    submit()
   };
 
-// TODO: improve logic for finding buttons
+  var submit = function(){
+    gameState.turn = !gameState.turn;
+    socket.emit('gameState', gameState);
+  };
+
+  // TODO: have verify function check if moves were valid
+  var verify = function(data){
+    if (gameState.cards[playerBool ? 0 : 1].length == gameState.cards[player].length == 0)
+      return true;
+    else
+      return true;
+  };
+
 $(document).ready(function(){
   // Events for button clicks
   $('#button-container')
     .children()
     .first()
     .children()
-    .on('click', function(){
-      sortCardsByRank(cards);
+    .on('click', () => {
+      sortCardsByRank(gameState.cards[player]);
+      updateCardDisplay(gameState.cards[player], "self-cards");
     });
   $('#button-container')
     .children()
     .eq(1)
     .children()
-    .on('click', sortCardsBySuit);
+    .on('click', () => {
+      sortCardsBySuit();
+      updateCardDisplay(gameState.cards[player], "self-cards");
+    });
   $('#button-container')
     .children()
     .eq(2)
@@ -192,7 +227,7 @@ $(document).ready(function(){
     .on('click', '.self-cards', function(){
     //fix toggling class
     $(this).toggleClass('selected');
-    cards[$(this).index()].selected = !cards[$(this).index()].selected;
+    gameState.cards[player][$(this).index()].selected = !gameState.cards[player][$(this).index()].selected;
   });
 });
 
@@ -200,20 +235,22 @@ $(document).ready(function(){
 window.addEventListener("load", function(){
 
   load();
-
-  // Initial set up - draws 17 cards for player and opponent
-  for (i = 0; i < 17; i++){
-        cards.push(deck[drawCard()-1]);
-        oppCards.push(deck[drawCard()-1]);
+  console.log(player);
+  if (!playerBool){
+    // Initial set up - draws 17 cards for player and opponent
+    for (i = 0; i < 2; i++){
+      for (j = 0; j < 17; j++){
+            gameState.cards[i].push(deck[drawCard()-1]);
+      }
+      sortCardsByRank(gameState.cards[i]);
+    }
+    gameState.turn = gameState.cards[0][0].val > gameState.cards[1][0].val;
+    console.log(gameState.cards);
+    console.log(player);
+    updateCardDisplay(gameState.cards[player], "self-cards");
   }
-  sortCardsByRank(cards);
-  sortCardsByRank(oppCards);
+  else{
+    socket.emit('firstGameState');
+  }
 
-  turn = cards[0].val > oppCards[0].val;
-
-  updateCardDisplay(cards, "self-cards");
-});
-
-var receive = socket.on('gameState', function(data){
-    console.log(data.pass);
 });
