@@ -35,7 +35,7 @@ var checkCombo = function(prev, curr){
   var prevStrength = 3*checkStraight(prev) + 4*checkFlush(prev) +
                   5*checkFullHouse(prev) + 6*checkFourOfAKind(prev);
 
-  var prevStrength = 3*checkStraight(curr) + 4*checkFlush(curr) +
+  var currStrength = 3*checkStraight(curr) + 4*checkFlush(curr) +
                   5*checkFullHouse(curr) + 6*checkFourOfAKind(curr);
 
   // Middle card is same rank as the three-of-a-kind of four-of-a-kind
@@ -68,8 +68,8 @@ var checkFlush = function(arr){
 
 // Checks if an array is a full house
 var checkFullHouse = function(arr){
-  return (checkNOfAKind(arr, 4) == 3 &&
-          isSameRank(arr[0], arr[1]) || isSameRank(arr[3], arr[4]));
+  return (checkNOfAKind(arr, 5) == 3 &&
+          isSameRank(arr[0], arr[1]) && isSameRank(arr[3], arr[4]));
 }
 
 var checkFourOfAKind = function(arr){

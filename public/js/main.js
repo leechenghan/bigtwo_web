@@ -1,5 +1,3 @@
-// TODO: FIXED 1. why does first instantiation always = undefined?
-// TODO: FIXED 2. fix problem with images
 // TODO: why do cards change when hosting?
 
   var sprites = [],
@@ -24,28 +22,21 @@
   var socket = io.connect('http://localhost:3000');
 
   socket.on('init', (data) => {
-    console.log('init has been called');
     player = data.host ? 1 : 0;
     playerBool = data.host;
     init();
   });
 
   socket.on('firstGameState', function(data){
-    console.log('received request for first game state');
     socket.emit('gameState', gameState);
   });
 
   socket.on('gameState', function(data){
-    console.log('received game state, verify() is called');
     if (verify(data))
       gameState = data;
     updateCardDisplay(gameState.cards[player], "self-cards");
     updateCardDisplay(gameState.validSubmission, "middle-cards");
     update();
-  });
-
-  socket.on('printState', function(data){
-    console.log('printing state of: ' + data);
   });
 
   // Checks if game is over
@@ -192,8 +183,6 @@
   };
 
   var submit = function(){
-    console.log("submitted cards -> emit function. gamestate object is: ");
-    console.log(gameState);
     socket.emit('gameState', gameState);
   };
 
@@ -244,11 +233,6 @@ $(document).ready(function(){
 
 var init = function(){
   load();
-  console.log('player number is:' + player);
-  if (playerBool)
-    console.log('this means player is hosting');
-  else
-    console.log('player is not hosting');
 
   if (playerBool){
     // Initial set up - draws 17 cards for player and opponent
@@ -262,7 +246,6 @@ var init = function(){
     updateCardDisplay(gameState.cards[player], "self-cards");
   }
   else{
-    console.log("emitting first game state")
     socket.emit('firstGameState');
   }
 }

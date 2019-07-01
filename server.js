@@ -1,6 +1,3 @@
-// TODO: 1. look into websocket rooms
-// TODO: 2. why does first instantiation always = undefined?
-
 const fs = require('fs'),
       path = require('path'),
       express = require('express');
@@ -8,24 +5,31 @@ const fs = require('fs'),
 var app = express(),
     server = app.listen(3000),
     io = require('socket.io').listen(server),
-    host = true;
+    host = true,
+    rooms = [],
+    map = {};
 
 app.set('port', process.env.PORT || 3000);
 
 app.use(express.static('public'));
-app.use(express.static('public/img'));
 
 io.on('connection', function(socket){
+  if (host)
+    rooms.push(rooms.length);
+
   socket.emit('init', { host: host });
-  console.log('new connection with id: ' + host);
+  socket.join(rooms.length-1);
+  map[socket.id] = rooms.length-1;
+
   host = !host;
 
   socket.on('firstGameState', (data) => {
-    socket.broadcast.emit('firstGameState', data);
+
+    socket.broadcast.to(map[socket.id]).emit('firstGameState', data);
   });
 
   socket.on('gameState', (data) => {
-    socket.broadcast.emit('gameState', data);
+    socket.broadcast.to(map[socket.id]).emit('gameState', data);
   });
 });
 
