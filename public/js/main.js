@@ -1,9 +1,10 @@
-// TODO: Think about a global game state object. can pass game state thru websocket too
+// TODO: FIXED 1. why does first instantiation always = undefined?
+// TODO: FIXED 2. fix problem with images
+// TODO: why do cards change when hosting?
 
   var sprites = [],
       submitted = [],
       deck = [],
-      gameStart = false,
       playerBool = undefined,
       player = undefined,
       gameEnds = false;
@@ -23,9 +24,10 @@
   var socket = io.connect('http://localhost:3000');
 
   socket.on('init', (data) => {
+    console.log('init has been called');
     player = data.host ? 1 : 0;
     playerBool = data.host;
-    gameStart = true;
+    init();
   });
 
   socket.on('firstGameState', function(data){
@@ -59,7 +61,7 @@
   var load = function (){
     for (i = 1; i < 53; i++){
       sprites.push(new Image());
-      sprites[i-1].src = '../img/' + i + '.png';
+      sprites[i-1].src = "../img/" + i + ".png";
       gameState.deckLeft.push(i);
       deck.push({
         val: i,
@@ -130,7 +132,7 @@
     }
 
     arr.forEach(function(e,i){
-      $('#' + location + '-container').children().eq(i).html(sprites[e.val-1].src);
+      $('#' + location + '-container').children().eq(i).html('<img src="' + sprites[e.val-1].src + '">');
     });
   }
 
@@ -240,11 +242,14 @@ $(document).ready(function(){
   });
 });
 
-
-window.addEventListener("load", function(){
-
+var init = function(){
   load();
-  console.log('player number is:' + player + ' and player==bool');
+  console.log('player number is:' + player);
+  if (playerBool)
+    console.log('this means player is hosting');
+  else
+    console.log('player is not hosting');
+
   if (playerBool){
     // Initial set up - draws 17 cards for player and opponent
     for (i = 0; i < 2; i++){
@@ -260,5 +265,8 @@ window.addEventListener("load", function(){
     console.log("emitting first game state")
     socket.emit('firstGameState');
   }
+}
 
+window.addEventListener("load", function(){
+  //load();
 });

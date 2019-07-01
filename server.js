@@ -1,3 +1,6 @@
+// TODO: 1. look into websocket rooms
+// TODO: 2. why does first instantiation always = undefined?
+
 const fs = require('fs'),
       path = require('path'),
       express = require('express');
@@ -10,10 +13,11 @@ var app = express(),
 app.set('port', process.env.PORT || 3000);
 
 app.use(express.static('public'));
+app.use(express.static('public/img'));
 
 io.on('connection', function(socket){
-  console.log('new connection with id: ' + socket.Id);
   socket.emit('init', { host: host });
+  console.log('new connection with id: ' + host);
   host = !host;
 
   socket.on('firstGameState', (data) => {

@@ -39,10 +39,12 @@ var checkCombo = function(prev, curr){
                   5*checkFullHouse(curr) + 6*checkFourOfAKind(curr);
 
   // Middle card is same rank as the three-of-a-kind of four-of-a-kind
-  if (prevStrength == 5 || prevStrength == 6)
+  if (prevStrength == 5 || prevStrength == 6
+      && currStrength == prevStrength)
     return curr[2].val > prev[2].val;
   // Comparing final card is sufficient for straight/flush/straightflush
-  else if (prevStrength >= 3 && prevStrength <= 7)
+  else if (prevStrength >= 3 && prevStrength <= 7
+           && currStrength == prevStrength)
     return curr[4].val > prev[4].val;
   else
     return currStrength > prevStrength
@@ -78,7 +80,7 @@ var checkFourOfAKind = function(arr){
 var checkNOfAKind = function(arr, n){
   var numSame = 0;
   for (i = 0; i < n; i++){
-    numSame += isSameRank(arr[(arr.length-1)/2], arr[i+1]);
+    numSame += isSameRank(arr[(arr.length-1)/2], arr[i]);
   }
   return numSame;
 }
