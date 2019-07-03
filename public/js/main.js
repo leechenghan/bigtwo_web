@@ -1,5 +1,3 @@
-// TODO: why do cards change when hosting?
-
   var sprites = [],
       submitted = [],
       deck = [],
@@ -17,7 +15,6 @@
   for (i = 0; i < 2; i++){
     gameState.cards.push([]);
   }
-
 
   var socket = io.connect('http://localhost:3000');
 
@@ -248,8 +245,4 @@ var init = function(){
   else{
     socket.emit('firstGameState');
   }
-}
-
-window.addEventListener("load", function(){
-  //load();
-});
+};

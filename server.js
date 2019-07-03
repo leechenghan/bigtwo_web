@@ -32,5 +32,3 @@ io.on('connection', function(socket){
     socket.broadcast.to(map[socket.id]).emit('gameState', data);
   });
 });
-
-//io.sockets.connected[socketId]
